@@ -89,7 +89,6 @@ object SendMoreMoney {
    */
   case class AddProof(operand1: Long, operand2: Long, total: Long)
   case class PotentialMatch(operand1: String, operand2: String, total: String, addProofs: Set[AddProof], usageProof: Option[String]) extends SMMMessage
-  case class CheckAdds(payload: PotentialMatch) extends SMMMessage
   case object AddChecked extends SMMMessage
   case object UsageChecked extends SMMMessage
   case object ResultPrinted extends SMMMessage
@@ -200,7 +199,7 @@ object SendMoreMoney {
           word3 <- words
         ) {
           if (allowDuplicateOperands || word1 != word2) {
-            sumCheckerRouter ! CheckAdds(PotentialMatch(word1, word2, word3, Set.empty, None))
+            sumCheckerRouter ! PotentialMatch(word1, word2, word3, Set.empty, None)
             wordsSentToAddCheck += 1
           }
         }
@@ -381,7 +380,7 @@ object SendMoreMoney {
     }
 
     def receive = {
-      case CheckAdds(PotentialMatch(operand1, operand2, total, _, maybeFreq)) =>
+      case PotentialMatch(operand1, operand2, total, _, maybeFreq) =>
         if (logEntry) {
           log.debug("SumChecker received %s + %s = %s?".format(operand1, operand2, total))
         }
