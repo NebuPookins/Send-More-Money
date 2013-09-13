@@ -88,7 +88,16 @@ object SendMoreMoney {
    * a SumChecker actor, and verified by the other actors.
    */
   case class AddProof(operand1: Long, operand2: Long, total: Long)
-  case class PotentialMatch(operand1: String, operand2: String, total: String, addProofs: Set[AddProof], usageProof: Option[String]) extends SMMMessage
+  /**
+   * PotentialMatch is the workhorse of the messages. It contains the three-word
+   * equation, with optionally a proof of equation-validity, and a proof of
+   * usage by humans.
+   */
+  case class PotentialMatch(
+    operand1: String, operand2: String, total: String,
+    addProofs: Set[AddProof],
+    usageProof: Option[String]
+  ) extends SMMMessage
   case object AddChecked extends SMMMessage
   case object UsageChecked extends SMMMessage
   case object ResultPrinted extends SMMMessage
