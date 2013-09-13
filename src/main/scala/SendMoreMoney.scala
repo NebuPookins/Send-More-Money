@@ -193,7 +193,7 @@ object SendMoreMoney {
       { (operand1: String, operand2: String, total: String) =>
         operand1.length <= total.length &&
         operand2.length <= total.length &&
-        total.length <= Math.max(operand1.length, operand2.length) + 1
+        total.length <= math.max(operand1.length, operand2.length) + 1
       }
     )
 
