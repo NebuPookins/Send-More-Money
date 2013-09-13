@@ -17,3 +17,5 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.2" % "test"
 libraryDependencies += "commons-codec" % "commons-codec" % "1.3"
 
 libraryDependencies += "oauth.signpost" % "signpost-core" % "1.2.1.2"
+
+scalacOptions += "-deprecation"
