@@ -123,31 +123,24 @@ object SendMoreMoney {
   case object ResultPrinted extends SMMMessage
 
   /**
-   * 
+   * The Master Actor takes in a Configuration object specifying details like
+   * what dictionary file to read from, what the Twitter authentication info
+   * is, etc., and then arranges to generate SEND+MORE=MONEY puzzles (mainly
+   * by delegating to child actors)
    */
-  class ResultPrinter(appConf: Config) extends Actor with ActorLogging {
-    val numSolutions: Int = appConf.getInt("max-solutions-to-print")
-    def receive = {
-      case PotentialMatch(word1, word2, word3, addProofs, Some(usageProof)) =>
-        if (addProofs.nonEmpty) {
-          val addProofsString =
-            addProofs.take(numSolutions).map(proof =>
-              "%d + %d = %d".format(proof.operand1, proof.operand2, proof.total)
-            ).mkString(", ")
-          val moreStr = if (addProofs.size > numSolutions) ", ..." else ""
-          println(
-            "\n\t  %10s\n\t+ %10s\n\t============\n\t  %10s\nE.g. %s\nSolutions: %s%s\n"
-            .format(word1, word2, word3, usageProof, addProofsString, moreStr)
-          )
-          sender ! ResultPrinted
-        } else {
-          log.error("Should not have sent %s %s %s if there are no add proofs.".format(word1, word2, word3))
-        }
-        
-    }
-  }
-
   class Master(appConf: Config) extends Actor with ActorLogging {
+    /*
+     * The Master actor is also in charge of enforcing global level rules that
+     * were set in the configuration. For example, it will enfore the
+     * minimum-word-length rule, and the allow-non-unique-solutions rule.
+     */
+
+    /*
+     * The mastor actor starts by reading all the relevant information from the
+     * configuration file. It will print a warning if the configuration states
+     * to use fewer SumChecker workers than there are CPU cores, but will
+     * proceed anyway.
+     */
     val numSumCheckers = appConf.getInt("number-of-sum-checkers")
     val minimumWordLength = appConf.getInt("minimum-word-length")
     val allowDuplicateOperands = appConf.getBoolean("allow-duplicate-operand")
@@ -161,6 +154,11 @@ object SendMoreMoney {
         "application.conf file."
       )
     }
+
+    /*
+     * It then filters to dictionary list to only keep those which exist,
+     * printing a warning for each file that does not exist.
+     */
     val wordFiles: List[File] = {
       import scala.collection.JavaConverters._
       val tempWordFiles = for(
@@ -174,6 +172,10 @@ object SendMoreMoney {
       }
       existing
     }
+    /*
+     * It then reads in these files, filtering out words that are shorter than
+     * minimum-word-length, and normalizing the casing to be all UPPERCASE.
+     */
     val words: Set[String] = {
       log.info("Received files: %s ".format(wordFiles))
       val temp: Traversable[String] = (for (file <- wordFiles) yield {
@@ -181,10 +183,13 @@ object SendMoreMoney {
         val lines: Iterator[String] = Source.fromFile(file, "UTF-8").getLines
         lines
       }).flatten.filter(_.length >= minimumWordLength)
-      assert(temp.nonEmpty, "temp.size == %d".format(temp.size))
+      assert(temp.nonEmpty, "temp.size == %d".format(temp.size)) //TODO: Handle empty word list?
       temp.map(_.toUpperCase).toSet
     }
-    assert(words.nonEmpty, "words.size == %d".format(words.size))
+    assert(words.nonEmpty, "words.size == %d".format(words.size)) //TODO: Handle empty word list?
+    /*
+     * It generates all of its child actors.
+     */
     val sumCheckerRouter = context.actorOf(
         Props.empty.withRouter(RoundRobinRouter(routees = {
           for (_ <- 0 until numSumCheckers) yield context.actorOf(Props(new SumChecker(appConf)))
@@ -192,6 +197,15 @@ object SendMoreMoney {
     val freqchecker = context.actorOf(Props(new FrequencyChecker(appConf)), name = "FrequencyChecker")
     val resultPrinter = context.actorOf(Props(new ResultPrinter(appConf)), name = "ResultPrinter")
 
+    /*
+     * It has a set of counters to check when all the jobs are finished. Every
+     * time it sends out a job, it increments the appropriate wordsSent counter,
+     * and when the results received equals the jobs sent, it knows all the work
+     * is done.
+     *
+     * TODO: This assumes that message delivery is guaranteed. Refactor to
+     * support dropped messages?
+     */
     var wordsSentToAddCheck = 0
     var wordsAddChecked = 0
     var wordsSentToUsageCheck = 0
@@ -254,6 +268,31 @@ object SendMoreMoney {
       case ResultPrinted =>
         resultsPrinted += 1
         checkShutdown()
+    }
+  }
+
+  /**
+   * 
+   */
+  class ResultPrinter(appConf: Config) extends Actor with ActorLogging {
+    val numSolutions: Int = appConf.getInt("max-solutions-to-print")
+    def receive = {
+      case PotentialMatch(word1, word2, word3, addProofs, Some(usageProof)) =>
+        if (addProofs.nonEmpty) {
+          val addProofsString =
+            addProofs.take(numSolutions).map(proof =>
+              "%d + %d = %d".format(proof.operand1, proof.operand2, proof.total)
+            ).mkString(", ")
+          val moreStr = if (addProofs.size > numSolutions) ", ..." else ""
+          println(
+            "\n\t  %10s\n\t+ %10s\n\t============\n\t  %10s\nE.g. %s\nSolutions: %s%s\n"
+            .format(word1, word2, word3, usageProof, addProofsString, moreStr)
+          )
+          sender ! ResultPrinted
+        } else {
+          log.error("Should not have sent %s %s %s if there are no add proofs.".format(word1, word2, word3))
+        }
+        
     }
   }
 
