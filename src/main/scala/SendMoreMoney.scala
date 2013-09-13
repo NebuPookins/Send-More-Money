@@ -276,18 +276,32 @@ object SendMoreMoney {
           wordsSentToAddCheck += 1
         }
         log.info("Master has finished sending out the wordlist.")
-      case PotentialMatch(word1, word2, wordtotal, Some(addProofs), None) =>
-        if (addProofs.nonEmpty) {
-          if (allowNonUniqueSolutions || addProofs.size == 1) {
-            freqchecker ! PotentialMatch(word1, word2, wordtotal, Some(addProofs), None)
+      case PotentialMatch(word1, word2, wordtotal, Some(solutionsFound), None) =>
+        /*
+         * This message should be sent by a SumChecker to inform the Master that
+         * a sum verification is complete. The master checks there is at least
+         * one solution. If not, processing for this PotentialMatch is finished.
+         * If there is at least one solution, the allow-non-unique-solutions
+         * rule is applied, and then the PotentialMatch is sent to the
+         * FrequencyChecker.
+         */
+        if (solutionsFound.nonEmpty) {
+          if (allowNonUniqueSolutions || solutionsFound.size == 1) {
+            freqchecker ! PotentialMatch(word1, word2, wordtotal, Some(solutionsFound), None)
             wordsSentToUsageCheck += 1
           }
         }
       case PotentialMatch(word1, word2, wordtotal, Some(addProofs), Some(usageProof: String)) =>
-        if (addProofs.nonEmpty) {
-          resultPrinter ! PotentialMatch(word1, word2, wordtotal, Some(addProofs), Some(usageProof))
-          wordsSentToResultPrinter += 1
-        }
+        /**
+         * This message should be sent by the FrequencyChecker to indicate it
+         * found evidence of the three-word sequence used by some human (e.g.
+         * in a tweet). In response, the Master actor will send the
+         * PotentialMatch to the ResultPrinter for it to be displayed to the
+         * user.
+         */
+        assert(addProofs.nonEmpty)
+        resultPrinter ! PotentialMatch(word1, word2, wordtotal, Some(addProofs), Some(usageProof))
+        wordsSentToResultPrinter += 1
       case AddChecked =>
         wordsAddChecked += 1
         checkShutdown()
