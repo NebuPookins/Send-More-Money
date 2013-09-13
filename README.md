@@ -40,6 +40,53 @@ each word (e.g. only produce puzzles where all the words are at least 4 letters
 long), and whether to produce puzzles which allow multiple solutions or only
 puzzles with unique solutions, etc.
 
+How to run it
+=============
+
+The easiest way to compile the program is to use SBT. You can download SBT from
+http://www.scala-sbt.org/release/docs/Getting-Started/Setup.html
+
+While SBT is downloading, you should edit the application.conf file. The two
+most important things for you to edit are the "twitter-authentication" section,
+and the "number-of-sum-checkers" field. Both fields are explained in the
+application.conf file itself.
+
+Once you've edited the application.conf file, and have installed SBT, run sbt
+and at the prompt, type `run`. You should see output similar to the following:
+
+    [INFO] [09/13/2013 09:58:46.902] [SendMoreMoneySystem-akka.actor.default-dispatcher-2] [akka://SendMoreMoneySystem/user/master] Received files: List(/home/nebu/dev/send-more-money/test.txt, /home/nebu/dev/send-more-money/wikipedia-100-words.txt) 
+    [INFO] [09/13/2013 09:58:46.902] [SendMoreMoneySystem-akka.actor.default-dispatcher-2] [akka://SendMoreMoneySystem/user/master] Processing /home/nebu/dev/send-more-money/test.txt...
+    [INFO] [09/13/2013 09:58:46.902] [SendMoreMoneySystem-akka.actor.default-dispatcher-2] [akka://SendMoreMoneySystem/user/master] Processing /home/nebu/dev/send-more-money/wikipedia-100-words.txt...
+    [INFO] [09/13/2013 09:58:46.927] [SendMoreMoneySystem-akka.actor.default-dispatcher-2] [akka://SendMoreMoneySystem/user/master] Master received start message. Starting. Length of words is 53.
+    [INFO] [09/13/2013 09:58:47.393] [SendMoreMoneySystem-akka.actor.default-dispatcher-2] [akka://SendMoreMoneySystem/user/master] Master has finished sending out the wordlist.
+
+Then, depending on how large your wordlist is, you may have a pause here
+anywhere from a few seconds, to tens of minutes.
+
+Eventually, you should see puzzles being churned out, e.g.
+
+
+                FROM
+        +      THERE
+        ============
+               OTHER
+    E.g. @TweetsfromSandy @Paige2psu my mom bought me a Vera Wang dress from Kohl's a couple weeks ago. Only thing I have from there other than Nike.
+    Solutions: 7536 + 24959 = 32495
+    
+                WITH
+        +       WHAT
+        ============
+               DADDY
+    E.g. If you have a problem with what daddy says, go to the house. He's the boss. I'm tired of working with immature "adults"
+    Solutions: 6278 + 6837 = 13115
+
+... and so on. Eventually, you should see:
+
+    [INFO] [09/13/2013 10:01:10.282] [SendMoreMoneySystem-akka.actor.default-dispatcher-1] [akka://SendMoreMoneySystem/user/master] All work done. Shutting down.
+    [success] Total time: 144 s, completed 13-Sep-2013 10:01:10 AM
+
+... after which you will be returned to the SBT prompt. Type `exit` to quit SBT.
+
 Why it was written
 ==================
 
