@@ -33,6 +33,46 @@ object SendMoreMoney {
    */
 
   /**
+   * Main entry-point into the application.
+   *
+   * @param args ignored. All configuration is done via the application.conf file.
+   */
+  def main(args: Array[String]) {
+    /*
+     * This function gets configuration via the Typesafe-config library (so
+     * usually, this data will come from the application.conf file), then goes
+     * down into the "send-more-money" section (i.e. ignoring the akka section),
+     * and it's this inner appConfig that gets passed around everywhere.
+     *
+     * The function then checks that the twitter-authentication section has been
+     * filled out, and if not, exits early, informing the user on standard-error
+     * that they must fill out that section.
+     *
+     * If the twitter information is present, this function starts the actor
+     * system, and creates the Master actor, and then sends the Master actor the
+     * "start" message, indicating it should start working.
+     */
+    val rootConf: Config = ConfigFactory.load()
+    val appConf: Config = rootConf.getConfig("send-more-money")
+    if (
+      appConf.getString("twitter-authentication.consumer-key") == "XXX" ||
+      appConf.getString("twitter-authentication.consumer-secret") == "XXX" ||
+      appConf.getString("twitter-authentication.access-token") == "XXX" ||
+      appConf.getString("twitter-authentication.access-token-secret") == "XXX"
+    ) {
+      System.err.println("You must edit the application.conf file and fill in")
+      System.err.println("the values for the consumer-key, consumer-secret,")
+      System.err.println("access-token and access-token-secret under the")
+      System.err.println("twitter-authentication section. Instructions for how")
+      System.err.println("to do this are provided in the application.conf file.")
+    } else {
+      val system = ActorSystem("SendMoreMoneySystem")
+      val master = system.actorOf(Props(new Master(appConf)), name = "master")
+      master ! Start
+    }
+  }
+
+  /**
    * 
    */
   class ResultPrinter(appConf: Config) extends Actor with ActorLogging {
@@ -164,27 +204,6 @@ object SendMoreMoney {
       case ResultPrinted =>
         resultsPrinted += 1
         checkShutdown()
-    }
-  }
-
-  def main(args: Array[String]) {
-    val rootConf: Config = ConfigFactory.load()
-    val appConf: Config = rootConf.getConfig("send-more-money")
-    if (
-      appConf.getString("twitter-authentication.consumer-key") == "XXX" ||
-      appConf.getString("twitter-authentication.consumer-secret") == "XXX" ||
-      appConf.getString("twitter-authentication.access-token") == "XXX" ||
-      appConf.getString("twitter-authentication.access-token-secret") == "XXX"
-    ) {
-      System.err.println("You must edit the application.conf file and fill in")
-      System.err.println("the values for the consumer-key, consumer-secret,")
-      System.err.println("access-token and access-token-secret under the")
-      System.err.println("twitter-authentication section. Instructions for how")
-      System.err.println("to do this are provided in the application.conf file.")
-    } else {
-      val system = ActorSystem("SendMoreMoneySystem")
-      val master = system.actorOf(Props(new Master(appConf)), name = "master")
-      master ! Start
     }
   }
 
