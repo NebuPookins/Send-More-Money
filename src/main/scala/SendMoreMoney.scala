@@ -242,16 +242,31 @@ object SendMoreMoney {
 
     def receive = {
       case Start =>
+        /*
+         * Upon receiving the Start message, the master actor will generate all
+         * possible 3-word sequences from its collection of words. It's at this
+         * point that the Mastor actor will apply the allow-duplicate-operand
+         * rule, if applicable.
+         *
+         * As a minor optimization, it will check that word1 != word3 (which
+         * would imply that word2 is zero), and word2 != word3 (which would
+         * imply word1 is zero).
+         */
         log.info("Master received start message. Starting. Length of words is %d.".format(words.size))
         for (
           word1 <- words;
           word2 <- words;
-          word3 <- words
+          if (allowDuplicateOperands || word1 != word2);
+          word3 <- words;
+          if (word1 != word3);
+          if (word2 != word3)
         ) {
-          if (allowDuplicateOperands || word1 != word2) {
-            sumCheckerRouter ! PotentialMatch(word1, word2, word3, Set.empty, None)
-            wordsSentToAddCheck += 1
-          }
+          /*
+           * TODO: Don't bother sending A+B=C and B+A=C, as the two are
+           * equivalent, so we can save some CPU cycles.
+           */
+          sumCheckerRouter ! PotentialMatch(word1, word2, word3, Set.empty, None)
+          wordsSentToAddCheck += 1
         }
         log.info("Master has finished sending out the wordlist.")
       case PotentialMatch(word1, word2, wordtotal, addProofs, None) =>
@@ -539,6 +554,7 @@ object SendMoreMoney {
               }).find({case tweet: String =>
                 tweet.toUpperCase().contains("%s %s %s".format(word1, word2, word3))
               })
+              //TODO: Ignore punctuation; collapse multiple spaces
               exampleUsage
             case HttpURLConnection.HTTP_UNAUTHORIZED =>
               val errorStream = request.getErrorStream()
