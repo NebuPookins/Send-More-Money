@@ -9,9 +9,9 @@ What it does
 There's a popular puzzle on the internet called "SEND + MORE = MONEY". The idea
 is that each letter represents some decimal digit, and to solve the puzzle, you
 have to figure out which digit each letter represents. For example, you might
-suspect that S represents 1, E represents 2, N represens 3, D represents 4, M
+suspect that S represents 1, E represents 2, N represents 3, D represents 4, M
 represents 5, O represents 6, R represents 7 and Y represents 8, but if you
-perform the substitution, you'll get 1234 + 5672 = 56327, which is false, and
+perform the substitution, you'll get 1234 + 5672 = 56328, which is false, and
 so this is not the correct solution to the puzzle. (If you want to see the
 correct solution, you can google for "SEND MORE MONEY".)
 
