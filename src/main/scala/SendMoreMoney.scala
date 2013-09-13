@@ -17,7 +17,7 @@ object SendMoreMoney {
    * 
    */
   class ResultPrinter(appConf: Config) extends Actor with ActorLogging {
-    val numSolutions: Int = appConf.getInt("max-solutions-to-find")
+    val numSolutions: Int = appConf.getInt("max-solutions-to-print")
     def receive = {
       case PotentialMatch(word1, word2, word3, addProofs, Some(usageProof)) =>
         if (addProofs.nonEmpty) {
@@ -170,8 +170,6 @@ object SendMoreMoney {
   }
 
   class SumChecker(appConf: Config) extends Actor with ActorLogging {
-    val numSolutions = appConf.getInt("max-solutions-to-find")
-    val logDigitPermutations = appConf.getBoolean("logging.sum-checker.digit-permutations")
     val logEntry = appConf.getBoolean("logging.sum-checker.entry")
     val logRecursiveAssignmentSearch = appConf.getBoolean("logging.sum-checker.recursive-assignment-search")
     val all10Digits = (0 until 10).toSet
