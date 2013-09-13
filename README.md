@@ -46,9 +46,10 @@ How to run it
 The easiest way to compile the program is to use SBT. You can download SBT from
 http://www.scala-sbt.org/release/docs/Getting-Started/Setup.html
 
-While SBT is downloading, you should edit the application.conf file. The two
-most important things for you to edit are the "twitter-authentication" section,
-and the "number-of-sum-checkers" field. Both fields are explained in the
+While SBT is downloading, you should edit the application.conf file. The
+location is `src/main/resources/application.conf`. The two most important things
+for you to edit are the "twitter-authentication" section, and the
+"number-of-sum-checkers" field. Both fields are explained in the
 application.conf file itself.
 
 Once you've edited the application.conf file, and have installed SBT, run sbt
