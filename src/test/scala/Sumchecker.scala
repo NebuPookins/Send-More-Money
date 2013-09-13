@@ -21,9 +21,9 @@ class SumCheckerSpec extends FlatSpec {
 		new TestKit(system) with ImplicitSender {
 			val sumCheckerRef = TestActorRef(new SumChecker(appConf))
 			val sumChecker = sumCheckerRef.underlyingActor
-			sumCheckerRef ! PotentialMatch(word1, word2, wordTotal, Set.empty, None)
+			sumCheckerRef ! PotentialMatch(word1, word2, wordTotal, None, None)
 			receiveN(1)(0) match {
-				case PotentialMatch(w1, w2, wt, addProof, _) =>
+				case PotentialMatch(w1, w2, wt, Some(addProof), _) =>
 					assert(w1 === word1)
 					assert(w2 === word2)
 					assert(wt === wordTotal)

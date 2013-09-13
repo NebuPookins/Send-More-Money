@@ -97,7 +97,14 @@ object SendMoreMoney {
    */
   case class PotentialMatch(
     operand1: String, operand2: String, total: String,
-    addProofs: Set[AddProof],
+    /**
+     * Optional proof of equation validity. None indicates that we don't know if
+     * the equation is valid or not. Some(Set.empty) indicates that we know
+     * these words do NOT form a valid equation. Some(non-empty Set) indicates
+     * that these words DO form a valid equation, with all the solutions that
+     * were found.
+     */
+    addProofs: Option[Set[AddProof]],
     usageProof: Option[String]
   ) extends SMMMessage
 
@@ -265,20 +272,20 @@ object SendMoreMoney {
            * TODO: Don't bother sending A+B=C and B+A=C, as the two are
            * equivalent, so we can save some CPU cycles.
            */
-          sumCheckerRouter ! PotentialMatch(word1, word2, word3, Set.empty, None)
+          sumCheckerRouter ! PotentialMatch(word1, word2, word3, None, None)
           wordsSentToAddCheck += 1
         }
         log.info("Master has finished sending out the wordlist.")
-      case PotentialMatch(word1, word2, wordtotal, addProofs, None) =>
+      case PotentialMatch(word1, word2, wordtotal, Some(addProofs), None) =>
         if (addProofs.nonEmpty) {
           if (allowNonUniqueSolutions || addProofs.size == 1) {
-            freqchecker ! PotentialMatch(word1, word2, wordtotal, addProofs, None)
+            freqchecker ! PotentialMatch(word1, word2, wordtotal, Some(addProofs), None)
             wordsSentToUsageCheck += 1
           }
         }
-      case PotentialMatch(word1, word2, wordtotal, addProofs, Some(usageProof: String)) =>
+      case PotentialMatch(word1, word2, wordtotal, Some(addProofs), Some(usageProof: String)) =>
         if (addProofs.nonEmpty) {
-          resultPrinter ! PotentialMatch(word1, word2, wordtotal, addProofs, Some(usageProof))
+          resultPrinter ! PotentialMatch(word1, word2, wordtotal, Some(addProofs), Some(usageProof))
           wordsSentToResultPrinter += 1
         }
       case AddChecked =>
@@ -299,7 +306,7 @@ object SendMoreMoney {
   class ResultPrinter(appConf: Config) extends Actor with ActorLogging {
     val numSolutions: Int = appConf.getInt("max-solutions-to-print")
     def receive = {
-      case PotentialMatch(word1, word2, word3, addProofs, Some(usageProof)) =>
+      case PotentialMatch(word1, word2, word3, Some(addProofs), Some(usageProof)) =>
         if (addProofs.nonEmpty) {
           val addProofsString =
             addProofs.take(numSolutions).map(proof =>
@@ -491,12 +498,9 @@ object SendMoreMoney {
               val numberTotal = wordToNumber(total, assignment)
               AddProof(number1, number2, numberTotal)
             }
-          if (addProofs.nonEmpty) {
-            log.debug("Found sum solutions for %s + %s = %s".format(operand1, operand2, total))
-            sender ! PotentialMatch(operand1, operand2, total, addProofs, maybeFreq)
-          } else {
-            log.debug("Discarded impossible sum for %s + %s = %s".format(operand1, operand2, total))
-          }
+          sender ! PotentialMatch(operand1, operand2, total, Some(addProofs), maybeFreq)
+        } else {
+          sender ! PotentialMatch(operand1, operand2, total, None, maybeFreq)
         }
         sender ! AddChecked
     }
@@ -527,7 +531,7 @@ object SendMoreMoney {
     val cache = scala.collection.mutable.Map.empty[(String,String,String), Option[String]]
 
     def receive = {
-      case PotentialMatch(word1, word2, word3, addProofs, None) =>
+      case PotentialMatch(word1, word2, word3, maybeAddProofs, None) =>
         val exampleUsage: Option[String] = cache.getOrElse((word1, word2, word3), {
           log.debug("FrequencyChecker cache miss. Perform Twitter API query.")
           import java.net.URLEncoder
@@ -579,12 +583,18 @@ object SendMoreMoney {
         })
         if (exampleUsage.isDefined) {
           log.debug("Found example usage of %s %s %s on Twitter.".format(word1, word2, word3))
-          sender ! PotentialMatch(word1, word2, word3, addProofs, exampleUsage)
+          sender ! PotentialMatch(word1, word2, word3, maybeAddProofs, exampleUsage)
         } else {
-          val proof = addProofs.head
+          val proofString: String = maybeAddProofs match {
+            case Some(addProofs) if addProofs.nonEmpty =>
+              val proof = addProofs.head
+              "(%s %s %s)".format(proof.operand1, proof.operand2, proof.total)
+            case None =>
+              ""
+          }
           log.debug(
-            "Found no usage of %s %s %s (%d + %d = %d) on Twitter.".format(
-              word1, word2, word3, proof.operand1, proof.operand2, proof.total
+            "Found no usage of %s %s %s %s on Twitter.".format(
+              word1, word2, word3, proofString
             )
           )
         }
