@@ -11,6 +11,27 @@ import scala.collection._
 import scala.io.Source
 
 object SendMoreMoney {
+  /*
+   * The general architecture of this app is that SendMoreMoney is the object
+   * containing the def main(args: Array[String]) entry point which simply does
+   * some minimal checks of the application.conf file, and then launches the
+   * actor system, spawning only the Master actor. The Master actor is then
+   * responsible for spawning all the other actors.
+   *
+   * The other actors are:
+   *
+   *  * The SumCheckers (by default, one actor per CPU core) which verify
+   *    whether there exists a solution to the three-word equation.
+   *  * The FrequencyChecker, which verifies that the three-word sequence has
+   *    at least one example usage (e.g. on Twitter)
+   *  * The ResultPrinter, which prints valid puzzles to standard out.
+   *
+   * All the non-Master actors simply communicate with whoever sent them a
+   * message. As such, they have no dependencies on any other actors, and are
+   * thus easier to unit test. In a normal run of the application, the sender
+   * is always the Master actor.
+   */
+
   /**
    * 
    */
