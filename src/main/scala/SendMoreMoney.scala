@@ -214,10 +214,17 @@ object SendMoreMoney {
     var resultsPrinted = 0
 
     val logShutdownChecks = appConf.getBoolean("logging.master.shutdown-checks")
+
+    /**
+     * checkShutdown determines whether all the jobs are complete by comparing
+     * the number of job request sent with the number of responses received. If
+     * they match, it invokes the Akka `system.shutdown()` call which shutsdown
+     * the actor system.
+     */
     def checkShutdown() {
       if (logShutdownChecks) {
         log.debug(
-          "Checking shutdown. add: %d == %d? usage %d == %d? print %d == %d?".format(
+          "Checking shutdown. add: %d == %d? usage: %d == %d? print: %d == %d?".format(
             wordsSentToAddCheck, wordsAddChecked, wordsSentToUsageCheck,
             wordsUsageChecked, wordsSentToResultPrinter, resultsPrinted
           )
