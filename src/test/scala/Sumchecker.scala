@@ -23,7 +23,7 @@ class SumCheckerSpec extends FlatSpec {
 			val sumChecker = sumCheckerRef.underlyingActor
 			sumCheckerRef ! PotentialMatch(word1, word2, wordTotal, None, None)
 			receiveN(1)(0) match {
-				case PotentialMatch(w1, w2, wt, Some(addProof), _) =>
+				case AddChecked(PotentialMatch(w1, w2, wt, Some(addProof), _)) =>
 					assert(w1 === word1)
 					assert(w2 === word2)
 					assert(wt === wordTotal)
