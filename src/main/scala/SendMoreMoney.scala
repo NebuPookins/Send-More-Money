@@ -321,10 +321,23 @@ object SendMoreMoney {
   }
 
   /**
-   * 
+   * The ResultPrinter actor expects to receive a sequence of PotentialMatch
+   * that have been vetted as appropriate to display to the user, and then
+   * simply displays them. In this case, the results are printed to standard
+   * out, but it's easy to imagine that the ResultPrinter could be configurable
+   * to display the results to an HTML or AJAX stream served by a webserver, or
+   * via a Swing-based GUI.
    */
   class ResultPrinter(appConf: Config) extends Actor with ActorLogging {
     val numSolutions: Int = appConf.getInt("max-solutions-to-print")
+    val template = """|
+      |  %10s
+      | +%10s
+      |  ==========
+      |  %10s
+      | Example usage: %s
+      | Solutions: %s
+      |""".stripMargin
     def receive = {
       case pm @ PotentialMatch(word1, word2, word3, Some(addProofs), Some(usageProof)) =>
         if (addProofs.nonEmpty) {
@@ -334,8 +347,7 @@ object SendMoreMoney {
             ).mkString(", ")
           val moreStr = if (addProofs.size > numSolutions) ", ..." else ""
           println(
-            "\n\t  %10s\n\t+ %10s\n\t============\n\t  %10s\nE.g. %s\nSolutions: %s%s\n"
-            .format(word1, word2, word3, usageProof, addProofsString, moreStr)
+            template.format(word1, word2, word3, usageProof, addProofsString + moreStr)
           )
           sender ! ResultPrinted(pm)
         } else {
