@@ -305,7 +305,16 @@ object SendMoreMoney {
         assert(addProofs.nonEmpty)
         resultPrinter ! PotentialMatch(word1, word2, wordtotal, Some(addProofs), Some(usageProof))
         wordsSentToResultPrinter += 1
+        /*
+         * Note that we don't need to run checkShutdown() here, because
+         * receiving this message always results in a new task (namely the
+         * message to ResultPrinter) being sent out.
+         */
       case ResultPrinted =>
+        /**
+         * This message should be sent by the ResultPrinted to indicate that it
+         * successfully displayed the PotentialMatch to the user.
+         */
         resultsPrinted += 1
         checkShutdown()
     }
