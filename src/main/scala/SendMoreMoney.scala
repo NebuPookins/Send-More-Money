@@ -127,7 +127,7 @@ object SendMoreMoney {
    * the sender (usually the Master actor) that they have printed the
    * PotentialMatch to the user.
    */
-  case object ResultPrinted extends SMMMessage //TODO: Make this wrap a PotentialMatch?
+  case class ResultPrinted(payload: PotentialMatch) extends SMMMessage
 
   /**
    * The Master Actor takes in a Configuration object specifying details like
@@ -317,7 +317,7 @@ object SendMoreMoney {
   class ResultPrinter(appConf: Config) extends Actor with ActorLogging {
     val numSolutions: Int = appConf.getInt("max-solutions-to-print")
     def receive = {
-      case PotentialMatch(word1, word2, word3, Some(addProofs), Some(usageProof)) =>
+      case pm @ PotentialMatch(word1, word2, word3, Some(addProofs), Some(usageProof)) =>
         if (addProofs.nonEmpty) {
           val addProofsString =
             addProofs.take(numSolutions).map(proof =>
@@ -328,7 +328,7 @@ object SendMoreMoney {
             "\n\t  %10s\n\t+ %10s\n\t============\n\t  %10s\nE.g. %s\nSolutions: %s%s\n"
             .format(word1, word2, word3, usageProof, addProofsString, moreStr)
           )
-          sender ! ResultPrinted
+          sender ! ResultPrinted(pm)
         } else {
           log.error("Should not have sent %s %s %s if there are no add proofs.".format(word1, word2, word3))
         }
