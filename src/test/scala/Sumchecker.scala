@@ -8,8 +8,6 @@ import com.typesafe.config._
 import org.scalatest._
 import org.scalatest.matchers._
 
-import scala.actors.Futures
-
 import SendMoreMoney._
 
 class SumCheckerSpec extends FlatSpec {
