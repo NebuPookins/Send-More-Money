@@ -67,7 +67,7 @@ object SendMoreMoney {
       System.err.println("to do this are provided in the application.conf file.")
     } else {
       val system = ActorSystem("SendMoreMoneySystem")
-      val master = system.actorOf(Props(new Master(appConf)), name = "master")
+      val master = system.actorOf(Props(classOf[Master], appConf), name = "master")
       master ! Start
     }
   }
@@ -199,10 +199,11 @@ object SendMoreMoney {
      */
     val sumCheckerRouter = context.actorOf(
         Props.empty.withRouter(RoundRobinRouter(routees = {
-          for (_ <- 0 until numSumCheckers) yield context.actorOf(Props(new SumChecker(appConf)))
+          for (_ <- 0 until numSumCheckers) yield
+          context.actorOf(Props(classOf[SumChecker], appConf))
         })), name = "SumCheckerRouter")
-    val freqchecker = context.actorOf(Props(new FrequencyChecker(appConf)), name = "FrequencyChecker")
-    val resultPrinter = context.actorOf(Props(new ResultPrinter(appConf)), name = "ResultPrinter")
+    val freqchecker = context.actorOf(Props(classOf[FrequencyChecker], appConf), name = "FrequencyChecker")
+    val resultPrinter = context.actorOf(Props(classOf[ResultPrinter], appConf), name = "ResultPrinter")
 
     /*
      * It has a set of counters to check when all the jobs are finished. Every
